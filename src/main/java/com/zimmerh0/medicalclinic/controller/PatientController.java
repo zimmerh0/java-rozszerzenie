@@ -1,5 +1,6 @@
 package com.zimmerh0.medicalclinic.controller;
 
+import com.zimmerh0.medicalclinic.dto.ChangePasswordDto;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.PatientDto;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
@@ -8,6 +9,7 @@ import com.zimmerh0.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -63,12 +65,33 @@ public class PatientController {
     }
 
     @PutMapping("/{email}")
-    public ResponseEntity<PatientDto> updatePatient(@PathVariable String email, @RequestBody UpdatePatientDto updatePatientDto) {
+    public ResponseEntity<PatientDto> updatePatient(
+            @PathVariable String email,
+            @RequestBody UpdatePatientDto updatePatientDto) {
         Optional<Patient> updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
         if (updatedPatient.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok(PatientDto.from(updatedPatient.get()));
+    }
+
+    @PutMapping("/{email}/password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable String email,
+            @RequestBody ChangePasswordDto dto) {
+        if (dto.currentPassword() == null || dto.newPassword()==null || dto.newPassword().isBlank()){
+            return ResponseEntity.badRequest().build();
+        }
+
+
+        Optional<Boolean> result = patientService.changePassword(email, dto);
+        if (result.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+        if (result.get()){
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.noContent().build();
     }
 }
