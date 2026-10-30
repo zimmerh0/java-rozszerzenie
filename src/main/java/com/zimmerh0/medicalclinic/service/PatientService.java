@@ -1,55 +1,50 @@
 package com.zimmerh0.medicalclinic.service;
 
+import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
+import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class PatientService {
-    
-    private final PatientRepository pr;
+    private final PatientRepository patientRepository;
 
-    public PatientService(PatientRepository pr) {
-        this.pr = pr;
-    }
     public List<Patient> getAllPatients() {
-        return pr.findAll();
+        return patientRepository.findAll();
     }
+
     public Optional<Patient> getPatientByEmail(String email) {
-        return pr.findByEmail(email);
+        return patientRepository.findByEmail(email);
     }
-    public boolean addPatient(Patient patient) {
-        if (pr.findByEmail(patient.getEmail()).isPresent()) {
-            return false;
-        }
-        pr.save(patient);
-        return true;
+
+    public Patient addPatient(CreatePatientDto createPatientDto) {
+        Patient patient = Patient.from(createPatientDto);
+        return patientRepository.save(patient);
     }
 
     public boolean deletePatientByEmail(String email) {
-        if (pr.findByEmail(email).isEmpty()) {
+        if (patientRepository.findByEmail(email).isEmpty()) {
             return false;
         }
-        pr.deleteByEmail(email);
+
+        patientRepository.deleteByEmail(email);
         return true;
     }
 
-    public Optional<Patient> updatePatientByEmail(String email, Patient updatedPatient) {
-        Optional<Patient> foundPatient = pr.findByEmail(email);
+    public Optional<Patient> updatePatientByEmail(String email, UpdatePatientDto updatePatientDto) {
+        Optional<Patient> foundPatient = patientRepository.findByEmail(email);
         if (foundPatient.isEmpty()) {
             return Optional.empty();
         }
+
         Patient patient = foundPatient.get();
-        patient.setPassword(updatedPatient.getPassword());
-        patient.setIdCardNo(updatedPatient.getIdCardNo());
-        patient.setFirstName(updatedPatient.getFirstName());
-        patient.setLastName(updatedPatient.getLastName());
-        patient.setPhoneNumber(updatedPatient.getPhoneNumber());
-        patient.setBirthday(updatedPatient.getBirthday());
-        pr.save(patient);
-        return Optional.of(patient);
+        patient.update(updatePatientDto);
+        return Optional.of(patientRepository.save(patient));
     }
 }

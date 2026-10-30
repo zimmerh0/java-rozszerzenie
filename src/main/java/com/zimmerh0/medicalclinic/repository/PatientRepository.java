@@ -12,16 +12,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PatientRepository {
     private final Map<String, Patient> patients = new ConcurrentHashMap<>();
 
-    public void save(Patient p){
-        patients.put(p.getEmail(), p);
+    public Patient save(Patient patient) {
+        patients.put(patient.getEmail(), patient);
+        return patient;
     }
-    public Optional<Patient> findByEmail(String email){
+
+    public Optional<Patient> findByEmail(String email) {
         return Optional.ofNullable(patients.get(email));
     }
+
     public List<Patient> findAll() {
         return List.copyOf(patients.values());
     }
-    public void deleteByEmail(String email){
+
+    public void deleteByEmail(String email) {
         patients.remove(email);
     }
 }

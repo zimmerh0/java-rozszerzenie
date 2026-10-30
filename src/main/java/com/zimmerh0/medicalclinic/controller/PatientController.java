@@ -5,6 +5,7 @@ import com.zimmerh0.medicalclinic.dto.PatientDto;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.service.PatientService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,61 +22,53 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/patients")
+@RequiredArgsConstructor
 public class PatientController {
-
-    private final PatientService ps;
-
-    public PatientController(PatientService ps) {
-        this.ps = ps;
-    }
+    private final PatientService patientService;
 
     @GetMapping
     public List<PatientDto> getPatients() {
-        return ps.getAllPatients().stream().map(this::toDto).toList();
+        return patientService.getAllPatients().stream()
+                .map(PatientDto::from)
+                .toList();
     }
+
     @GetMapping("/{email}")
     public ResponseEntity<PatientDto> getPatient(@PathVariable String email) {
-        Optional<Patient> patient = ps.getPatientByEmail(email);
+        Optional<Patient> patient = patientService.getPatientByEmail(email);
         if (patient.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(toDto(patient.get()));
+
+        return ResponseEntity.ok(PatientDto.from(patient.get()));
     }
+
     @PostMapping
-    public ResponseEntity<PatientDto> createPatient(@RequestBody CreatePatientDto dto) {
-        if (dto.email() == null || dto.email().isBlank()) {
+    public ResponseEntity<PatientDto> createPatient(@RequestBody CreatePatientDto createPatientDto) {
+        if (createPatientDto.email() == null || createPatientDto.email().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        Patient patient = toPatient(dto);
-        if (!ps.addPatient(patient)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(patient));
+
+        Patient patient = patientService.addPatient(createPatientDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(PatientDto.from(patient));
     }
+
     @DeleteMapping("/{email}")
     public ResponseEntity<Void> deletePatient(@PathVariable String email) {
-        if (!ps.deletePatientByEmail(email)) {
+        if (!patientService.deletePatientByEmail(email)) {
             return ResponseEntity.notFound().build();
         }
+
         return ResponseEntity.noContent().build();
     }
+
     @PutMapping("/{email}")
-    public ResponseEntity<PatientDto> updatePatient(@PathVariable String email, @RequestBody UpdatePatientDto dto) {
-        Optional<Patient> updatedPatient = ps.updatePatientByEmail(email, toPatient(email, dto));
+    public ResponseEntity<PatientDto> updatePatient(@PathVariable String email, @RequestBody UpdatePatientDto updatePatientDto) {
+        Optional<Patient> updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
         if (updatedPatient.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(toDto(updatedPatient.get()));
-    }
 
-
-    private Patient toPatient(CreatePatientDto dto) {
-        return new Patient(dto.email(), dto.password(), dto.idCardNo(), dto.firstName(), dto.lastName(), dto.phoneNumber(), dto.birthday());
-    }
-    private Patient toPatient(String email, UpdatePatientDto dto) {
-        return new Patient(email, dto.password(), dto.idCardNo(), dto.firstName(), dto.lastName(), dto.phoneNumber(), dto.birthday());
-    }
-    private PatientDto toDto(Patient patient) {
-        return new PatientDto(patient.getEmail(), patient.getIdCardNo(), patient.getFirstName(), patient.getLastName(), patient.getPhoneNumber(), patient.getBirthday());
+        return ResponseEntity.ok(PatientDto.from(updatedPatient.get()));
     }
 }
