@@ -23,9 +23,13 @@ public class PatientService {
         return patientRepository.findByEmail(email);
     }
 
-    public Patient addPatient(CreatePatientDto createPatientDto) {
+    public Optional<Patient> addPatient(CreatePatientDto createPatientDto) {
         Patient patient = Patient.from(createPatientDto);
-        return patientRepository.save(patient);
+        if (!patientRepository.saveIfAbsent(patient)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(patient);
     }
 
     public boolean deletePatientByEmail(String email) {

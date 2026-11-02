@@ -4,7 +4,6 @@ import java.time.LocalDate;
 
 public record UpdatePatientDto(
         String password,
-        String idCardNo,
         String firstName,
         String lastName,
         String phoneNumber,

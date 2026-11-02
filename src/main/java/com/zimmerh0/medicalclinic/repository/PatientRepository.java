@@ -17,6 +17,10 @@ public class PatientRepository {
         return patient;
     }
 
+    public boolean saveIfAbsent(Patient patient) {
+        return patients.putIfAbsent(patient.getEmail(), patient) == null;
+    }
+
     public Optional<Patient> findByEmail(String email) {
         return Optional.ofNullable(patients.get(email));
     }

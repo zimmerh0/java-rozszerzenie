@@ -49,8 +49,12 @@ public class PatientController {
             return ResponseEntity.badRequest().build();
         }
 
-        Patient patient = patientService.addPatient(createPatientDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(PatientDto.from(patient));
+        Optional<Patient> createdPatient = patientService.addPatient(createPatientDto);
+        if (createdPatient.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(PatientDto.from(createdPatient.get()));
     }
 
     @DeleteMapping("/{email}")
