@@ -5,7 +5,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
@@ -17,8 +16,8 @@ public class PatientRepository {
         return patient;
     }
 
-    public Optional<Patient> findByEmail(String email) {
-        return Optional.ofNullable(patients.get(email));
+    public Patient findByEmail(String email) {
+        return patients.get(email);
     }
 
     public List<Patient> findAll() {

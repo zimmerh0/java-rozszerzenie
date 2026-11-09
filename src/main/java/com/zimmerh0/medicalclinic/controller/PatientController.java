@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/patients")
@@ -37,11 +38,8 @@ public class PatientController {
 
     @GetMapping("/{email}")
     public ResponseEntity<PatientDto> getPatient(@PathVariable String email) {
-        Optional<Patient> patient = patientService.getPatientByEmail(email);
-        if (patient.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(patientMapper.toDto(patient.get()));
+        Patient patient = patientService.getPatientByEmail(email);
+        return ResponseEntity.ok(patientMapper.toDto(patient));
     }
 
     @PostMapping
@@ -55,19 +53,18 @@ public class PatientController {
 
     @DeleteMapping("/{email}")
     public ResponseEntity<Void> deletePatient(@PathVariable String email) {
-        if (!patientService.deletePatientByEmail(email)) {
-            return ResponseEntity.notFound().build();
-        }
+        patientService.deletePatientByEmail(email);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{email}")
     public ResponseEntity<PatientDto> updatePatient(@PathVariable String email, @RequestBody UpdatePatientDto updatePatientDto) {
-        Optional<Patient> updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
-        if (updatedPatient.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(patientMapper.toDto(updatedPatient.get()));
+        Patient updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
+        return ResponseEntity.ok(patientMapper.toDto(updatedPatient));
     }
 
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Void> handlePatientNotFound() {
+        return ResponseEntity.notFound().build();
+    }
 }
