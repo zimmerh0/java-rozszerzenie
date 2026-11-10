@@ -1,6 +1,6 @@
 package com.zimmerh0.medicalclinic.service;
 
-import com.zimmerh0.medicalclinic.dto.ChangePasswordDto;
+import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
@@ -49,19 +49,20 @@ public class PatientService {
         return Optional.of(patientRepository.save(patient));
     }
 
-    public Optional<Boolean> changePassword(String email, ChangePasswordDto dto){
+    public ChangePasswordResult changePassword(String email, ChangePasswordCommand command) {
         Optional<Patient> found = patientRepository.findByEmail(email);
 
-        if (!found.isEmpty()){
-            return Optional.empty();
-        }
-        Patient patient = found.get();
-        if (!patient.getPassword().equals(dto.currentPassword())){
-            return Optional.of(false);
+        if (found.isEmpty()) {
+            return ChangePasswordResult.PATIENT_NOT_FOUND;
         }
 
-        patient.setPassword(dto.newPassword());
+        Patient patient = found.get();
+        if (!patient.getPassword().equals(command.currentPassword())) {
+            return ChangePasswordResult.WRONG_PASSWORD;
+        }
+
+        patient.setPassword(command.newPassword());
         patientRepository.save(patient);
-        return Optional.of(true);
+        return ChangePasswordResult.CHANGED;
     }
 }
