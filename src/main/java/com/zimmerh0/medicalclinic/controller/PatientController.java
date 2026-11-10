@@ -1,9 +1,12 @@
 package com.zimmerh0.medicalclinic.controller;
 
+import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.PatientDto;
+import com.zimmerh0.medicalclinic.dto.PatientMapper;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
+import com.zimmerh0.medicalclinic.service.ChangePasswordResult;
 import com.zimmerh0.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,11 +28,12 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PatientController {
     private final PatientService patientService;
+    private final PatientMapper patientMapper;
 
     @GetMapping
     public List<PatientDto> getPatients() {
         return patientService.getAllPatients().stream()
-                .map(PatientDto::from)
+                .map(patientMapper::toDto)
                 .toList();
     }
 
@@ -39,8 +43,7 @@ public class PatientController {
         if (patient.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
-        return ResponseEntity.ok(PatientDto.from(patient.get()));
+        return ResponseEntity.ok(patientMapper.toDto(patient.get()));
     }
 
     @PostMapping
@@ -48,13 +51,8 @@ public class PatientController {
         if (createPatientDto.email() == null || createPatientDto.email().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-
-        Optional<Patient> createdPatient = patientService.addPatient(createPatientDto);
-        if (createdPatient.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(PatientDto.from(createdPatient.get()));
+        Patient patient = patientService.addPatient(createPatientDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(patientMapper.toDto(patient));
     }
 
     @DeleteMapping("/{email}")
@@ -62,17 +60,35 @@ public class PatientController {
         if (!patientService.deletePatientByEmail(email)) {
             return ResponseEntity.notFound().build();
         }
-
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{email}")
-    public ResponseEntity<PatientDto> updatePatient(@PathVariable String email, @RequestBody UpdatePatientDto updatePatientDto) {
+    public ResponseEntity<PatientDto> updatePatient(
+            @PathVariable String email,
+            @RequestBody UpdatePatientDto updatePatientDto) {
         Optional<Patient> updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
         if (updatedPatient.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(patientMapper.toDto(updatedPatient.get()));
+    }
 
-        return ResponseEntity.ok(PatientDto.from(updatedPatient.get()));
+    @PutMapping("/{email}/password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable String email,
+            @RequestBody ChangePasswordCommand command) {
+        if (command.currentPassword() == null
+                || command.newPassword() == null
+                || command.newPassword().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        ChangePasswordResult result = patientService.changePassword(email, command);
+        return switch (result) {
+            case PATIENT_NOT_FOUND -> ResponseEntity.notFound().build();
+            case WRONG_PASSWORD -> ResponseEntity.badRequest().build();
+            case CHANGED -> ResponseEntity.noContent().build();
+        };
     }
 }
