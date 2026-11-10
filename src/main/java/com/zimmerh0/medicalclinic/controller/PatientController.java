@@ -1,10 +1,12 @@
 package com.zimmerh0.medicalclinic.controller;
 
+import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.PatientDto;
 import com.zimmerh0.medicalclinic.dto.PatientMapper;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
+import com.zimmerh0.medicalclinic.service.ChangePasswordResult;
 import com.zimmerh0.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,7 +64,9 @@ public class PatientController {
     }
 
     @PutMapping("/{email}")
-    public ResponseEntity<PatientDto> updatePatient(@PathVariable String email, @RequestBody UpdatePatientDto updatePatientDto) {
+    public ResponseEntity<PatientDto> updatePatient(
+            @PathVariable String email,
+            @RequestBody UpdatePatientDto updatePatientDto) {
         Optional<Patient> updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
         if (updatedPatient.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -70,4 +74,21 @@ public class PatientController {
         return ResponseEntity.ok(patientMapper.toDto(updatedPatient.get()));
     }
 
+    @PutMapping("/{email}/password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable String email,
+            @RequestBody ChangePasswordCommand command) {
+        if (command.currentPassword() == null
+                || command.newPassword() == null
+                || command.newPassword().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        ChangePasswordResult result = patientService.changePassword(email, command);
+        return switch (result) {
+            case PATIENT_NOT_FOUND -> ResponseEntity.notFound().build();
+            case WRONG_PASSWORD -> ResponseEntity.badRequest().build();
+            case CHANGED -> ResponseEntity.noContent().build();
+        };
+    }
 }
