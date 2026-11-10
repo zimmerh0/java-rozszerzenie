@@ -3,6 +3,7 @@ package com.zimmerh0.medicalclinic.controller;
 import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.PatientDto;
+import com.zimmerh0.medicalclinic.dto.PatientMapper;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.service.ChangePasswordResult;
@@ -27,11 +28,12 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PatientController {
     private final PatientService patientService;
+    private final PatientMapper patientMapper;
 
     @GetMapping
     public List<PatientDto> getPatients() {
         return patientService.getAllPatients().stream()
-                .map(PatientDto::from)
+                .map(patientMapper::toDto)
                 .toList();
     }
 
@@ -41,8 +43,7 @@ public class PatientController {
         if (patient.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
-        return ResponseEntity.ok(PatientDto.from(patient.get()));
+        return ResponseEntity.ok(patientMapper.toDto(patient.get()));
     }
 
     @PostMapping
@@ -50,9 +51,8 @@ public class PatientController {
         if (createPatientDto.email() == null || createPatientDto.email().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-
         Patient patient = patientService.addPatient(createPatientDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(PatientDto.from(patient));
+        return ResponseEntity.status(HttpStatus.CREATED).body(patientMapper.toDto(patient));
     }
 
     @DeleteMapping("/{email}")
@@ -60,7 +60,6 @@ public class PatientController {
         if (!patientService.deletePatientByEmail(email)) {
             return ResponseEntity.notFound().build();
         }
-
         return ResponseEntity.noContent().build();
     }
 
@@ -72,8 +71,7 @@ public class PatientController {
         if (updatedPatient.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
-        return ResponseEntity.ok(PatientDto.from(updatedPatient.get()));
+        return ResponseEntity.ok(patientMapper.toDto(updatedPatient.get()));
     }
 
     @PutMapping("/{email}/password")

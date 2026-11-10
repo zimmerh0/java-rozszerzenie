@@ -33,7 +33,6 @@ public class Patient {
     }
 
     public void update(UpdatePatientDto updatePatientDto) {
-        //password = updatePatientDto.password();
         idCardNo = updatePatientDto.idCardNo();
         firstName = updatePatientDto.firstName();
         lastName = updatePatientDto.lastName();
