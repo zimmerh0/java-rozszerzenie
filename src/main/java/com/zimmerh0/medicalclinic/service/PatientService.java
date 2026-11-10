@@ -3,6 +3,7 @@ package com.zimmerh0.medicalclinic.service;
 import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
+import com.zimmerh0.medicalclinic.exception.PatientAlreadyExistsException;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,11 @@ public class PatientService {
 
     public Patient addPatient(CreatePatientDto createPatientDto) {
         Patient patient = Patient.from(createPatientDto);
-        return patientRepository.save(patient);
+        if (!patientRepository.saveIfAbsent(patient)) {
+            throw new PatientAlreadyExistsException(patient.getEmail());
+        }
+
+        return patient;
     }
 
     public boolean deletePatientByEmail(String email) {

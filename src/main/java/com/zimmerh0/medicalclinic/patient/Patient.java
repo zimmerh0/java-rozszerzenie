@@ -14,7 +14,7 @@ import java.time.LocalDate;
 public class Patient {
     private String email;
     private String password;
-    private String idCardNo;
+    private final String idCardNo;
     private String firstName;
     private String lastName;
     private String phoneNumber;
@@ -33,7 +33,6 @@ public class Patient {
     }
 
     public void update(UpdatePatientDto updatePatientDto) {
-        idCardNo = updatePatientDto.idCardNo();
         firstName = updatePatientDto.firstName();
         lastName = updatePatientDto.lastName();
         phoneNumber = updatePatientDto.phoneNumber();
