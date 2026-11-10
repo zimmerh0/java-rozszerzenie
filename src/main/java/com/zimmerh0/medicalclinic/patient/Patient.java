@@ -38,4 +38,5 @@ public class Patient {
         phoneNumber = updatePatientDto.phoneNumber();
         birthday = updatePatientDto.birthday();
     }
+
 }
