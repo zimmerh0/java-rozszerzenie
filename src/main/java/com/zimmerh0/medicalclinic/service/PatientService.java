@@ -2,6 +2,7 @@ package com.zimmerh0.medicalclinic.service;
 
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
+import com.zimmerh0.medicalclinic.exception.PatientNotFoundException;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class PatientService {
     public Patient getPatientByEmail(String email) {
         Patient patient = patientRepository.findByEmail(email);
         if (patient == null) {
-            throw new NoSuchElementException("Patient not found: " + email);
+            throw new PatientNotFoundException(email);
         }
         return patient;
     }

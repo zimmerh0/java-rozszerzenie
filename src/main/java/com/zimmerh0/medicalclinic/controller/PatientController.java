@@ -63,8 +63,4 @@ public class PatientController {
         return ResponseEntity.ok(patientMapper.toDto(updatedPatient));
     }
 
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Void> handlePatientNotFound() {
-        return ResponseEntity.notFound().build();
-    }
 }

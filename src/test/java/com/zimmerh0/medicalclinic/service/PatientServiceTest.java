@@ -1,6 +1,7 @@
 package com.zimmerh0.medicalclinic.service;
 
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
+import com.zimmerh0.medicalclinic.exception.PatientNotFoundException;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
 import org.junit.jupiter.api.Assertions;
@@ -96,7 +97,7 @@ public class PatientServiceTest {
         String email = "uhegfu@mail.com";
         when(patientRepository.findByEmail(email)).thenReturn(null);
         //when
-        NoSuchElementException exception = assertThrows(NoSuchElementException.class, () -> patientService.getPatientByEmail(email));
+        PatientNotFoundException exception = assertThrows(PatientNotFoundException.class, () -> patientService.getPatientByEmail(email));
         //then
         assertEquals("Patient not found: " + email, exception.getMessage());
     }
