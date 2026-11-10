@@ -1,6 +1,7 @@
 package com.zimmerh0.medicalclinic.service;
 
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
+import com.zimmerh0.medicalclinic.exception.PatientAlreadyExistsException;
 import com.zimmerh0.medicalclinic.exception.PatientNotFoundException;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
@@ -11,7 +12,7 @@ import org.mockito.Mockito;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,7 +53,7 @@ public class PatientServiceTest {
         //given
         String email = "mail1@mail.com";
         Patient patient = new Patient(email, "123", "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
-        when(patientRepository.findByEmail(email)).thenReturn(patient);
+        when(patientRepository.findByEmail(email)).thenReturn(Optional.of(patient));
         //when
         Patient result = patientService.getPatientByEmail(email);
         //then
@@ -63,7 +64,7 @@ public class PatientServiceTest {
     void addPatient_PatientCreated_PatientSavedAndReturned(){
         //given
         CreatePatientDto dto = new CreatePatientDto("email@mail.com", "123", "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
-        when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(patientRepository.saveIfAbsent(any(Patient.class))).thenReturn(true);
         //when
         Patient result = patientService.addPatient(dto);
         //then
@@ -76,6 +77,18 @@ public class PatientServiceTest {
                 () -> assertEquals("123456789", result.getPhoneNumber()),
                 () -> assertEquals(LocalDate.of(2000, 12, 1), result.getBirthday())
         );
+        verify(patientRepository).saveIfAbsent(result);
+    }
+
+    @Test
+    void addPatient_EmailExists_ThrowsException() {
+        CreatePatientDto dto = new CreatePatientDto("email@mail.com", "123", "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
+        when(patientRepository.saveIfAbsent(any(Patient.class))).thenReturn(false);
+
+        PatientAlreadyExistsException exception = assertThrows(PatientAlreadyExistsException.class,
+                () -> patientService.addPatient(dto));
+
+        assertEquals("Patient already exists: " + dto.email(), exception.getMessage());
     }
 
     @Test
@@ -83,7 +96,7 @@ public class PatientServiceTest {
         //given
         String email = "mail@mail.com";
         Patient patient = new Patient(email, "123", "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
-        when(patientRepository.findByEmail(email)).thenReturn(patient);
+        when(patientRepository.findByEmail(email)).thenReturn(Optional.of(patient));
         //when
         boolean result = patientService.deletePatientByEmail(email);
         //then
@@ -95,7 +108,7 @@ public class PatientServiceTest {
     void getPatientByEmail_PatientMissing_ThrowsException(){
         //given
         String email = "uhegfu@mail.com";
-        when(patientRepository.findByEmail(email)).thenReturn(null);
+        when(patientRepository.findByEmail(email)).thenReturn(Optional.empty());
         //when
         PatientNotFoundException exception = assertThrows(PatientNotFoundException.class, () -> patientService.getPatientByEmail(email));
         //then

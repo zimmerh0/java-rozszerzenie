@@ -1,16 +1,17 @@
 package com.zimmerh0.medicalclinic.controller;
 
+import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.PatientDto;
 import com.zimmerh0.medicalclinic.dto.PatientMapper;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
+import com.zimmerh0.medicalclinic.service.ChangePasswordResult;
 import com.zimmerh0.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/patients")
@@ -58,9 +58,28 @@ public class PatientController {
     }
 
     @PutMapping("/{email}")
-    public ResponseEntity<PatientDto> updatePatient(@PathVariable String email, @RequestBody UpdatePatientDto updatePatientDto) {
+    public ResponseEntity<PatientDto> updatePatient(
+            @PathVariable String email,
+            @RequestBody UpdatePatientDto updatePatientDto) {
         Patient updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
         return ResponseEntity.ok(patientMapper.toDto(updatedPatient));
     }
 
+    @PutMapping("/{email}/password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable String email,
+            @RequestBody ChangePasswordCommand command) {
+        if (command.currentPassword() == null
+                || command.newPassword() == null
+                || command.newPassword().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        ChangePasswordResult result = patientService.changePassword(email, command);
+        return switch (result) {
+            case PATIENT_NOT_FOUND -> ResponseEntity.notFound().build();
+            case WRONG_PASSWORD -> ResponseEntity.badRequest().build();
+            case CHANGED -> ResponseEntity.noContent().build();
+        };
+    }
 }

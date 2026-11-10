@@ -1,7 +1,9 @@
 package com.zimmerh0.medicalclinic.service;
 
+import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
+import com.zimmerh0.medicalclinic.exception.PatientAlreadyExistsException;
 import com.zimmerh0.medicalclinic.exception.PatientNotFoundException;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
@@ -9,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,16 +23,17 @@ public class PatientService {
     }
 
     public Patient getPatientByEmail(String email) {
-        Patient patient = patientRepository.findByEmail(email);
-        if (patient == null) {
-            throw new PatientNotFoundException(email);
-        }
-        return patient;
+        return patientRepository.findByEmail(email)
+                .orElseThrow(() -> new PatientNotFoundException(email));
     }
 
     public Patient addPatient(CreatePatientDto createPatientDto) {
         Patient patient = Patient.from(createPatientDto);
-        return patientRepository.save(patient);
+        if (!patientRepository.saveIfAbsent(patient)) {
+            throw new PatientAlreadyExistsException(patient.getEmail());
+        }
+
+        return patient;
     }
 
     public boolean deletePatientByEmail(String email) {
@@ -43,5 +46,22 @@ public class PatientService {
         Patient patient = getPatientByEmail(email);
         patient.update(updatePatientDto);
         return patientRepository.save(patient);
+    }
+
+    public ChangePasswordResult changePassword(String email, ChangePasswordCommand command) {
+        Optional<Patient> found = patientRepository.findByEmail(email);
+
+        if (found.isEmpty()) {
+            return ChangePasswordResult.PATIENT_NOT_FOUND;
+        }
+
+        Patient patient = found.get();
+        if (!patient.getPassword().equals(command.currentPassword())) {
+            return ChangePasswordResult.WRONG_PASSWORD;
+        }
+
+        patient.setPassword(command.newPassword());
+        patientRepository.save(patient);
+        return ChangePasswordResult.CHANGED;
     }
 }
