@@ -2,6 +2,7 @@ package com.zimmerh0.medicalclinic.patient;
 
 import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
 import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +25,7 @@ public class Patient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private String email;
     private String password;
     @Setter(AccessLevel.NONE)

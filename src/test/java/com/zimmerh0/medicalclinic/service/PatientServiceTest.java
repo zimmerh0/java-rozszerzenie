@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,7 +65,9 @@ public class PatientServiceTest {
     void addPatient_PatientCreated_PatientSavedAndReturned(){
         //given
         CreatePatientDto dto = new CreatePatientDto("email@mail.com", "123", "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
-        when(patientRepository.saveIfAbsent(any(Patient.class))).thenReturn(true);
+        when(patientRepository.existsByEmail(dto.email())).thenReturn(false);
+        when(patientRepository.save(any(Patient.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         //when
         Patient result = patientService.addPatient(dto);
         //then
@@ -77,18 +80,19 @@ public class PatientServiceTest {
                 () -> assertEquals("123456789", result.getPhoneNumber()),
                 () -> assertEquals(LocalDate.of(2000, 12, 1), result.getBirthday())
         );
-        verify(patientRepository).saveIfAbsent(result);
+        verify(patientRepository).save(result);
     }
 
     @Test
     void addPatient_EmailExists_ThrowsException() {
         CreatePatientDto dto = new CreatePatientDto("email@mail.com", "123", "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
-        when(patientRepository.saveIfAbsent(any(Patient.class))).thenReturn(false);
+        when(patientRepository.existsByEmail(dto.email())).thenReturn(true);
 
         PatientAlreadyExistsException exception = assertThrows(PatientAlreadyExistsException.class,
                 () -> patientService.addPatient(dto));
 
         assertEquals("Patient already exists: " + dto.email(), exception.getMessage());
+        verify(patientRepository, never()).save(any(Patient.class));
     }
 
     @Test
@@ -101,7 +105,7 @@ public class PatientServiceTest {
         boolean result = patientService.deletePatientByEmail(email);
         //then
         assertTrue(result);
-        verify(patientRepository).deleteByEmail(email);
+        verify(patientRepository).delete(patient);
     }
 
     @Test

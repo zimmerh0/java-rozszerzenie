@@ -28,17 +28,16 @@ public class PatientService {
     }
 
     public Patient addPatient(CreatePatientDto createPatientDto) {
-        Patient patient = Patient.from(createPatientDto);
-        if (!patientRepository.saveIfAbsent(patient)) {
-            throw new PatientAlreadyExistsException(patient.getEmail());
+        String email = createPatientDto.email();
+        if (patientRepository.existsByEmail(email)) {
+            throw new PatientAlreadyExistsException(email);
         }
-
-        return patient;
+        return patientRepository.save(Patient.from(createPatientDto));
     }
 
     public boolean deletePatientByEmail(String email) {
-        getPatientByEmail(email);
-        patientRepository.deleteByEmail(email);
+        Patient patient = getPatientByEmail(email);
+        patientRepository.delete(patient);
         return true;
     }
 
