@@ -1,10 +1,8 @@
-package com.zimmerh0.medicalclinic.dto;
+package com.zimmerh0.medicalclinic.dto.patient;
 
 import java.time.LocalDate;
 
-public record PatientDto(
-        String email,
-        String idCardNo,
+public record UpdatePatientDto(
         String firstName,
         String lastName,
         String phoneNumber,

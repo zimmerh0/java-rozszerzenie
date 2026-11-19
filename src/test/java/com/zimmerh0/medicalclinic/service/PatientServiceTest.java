@@ -1,6 +1,6 @@
 package com.zimmerh0.medicalclinic.service;
 
-import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
+import com.zimmerh0.medicalclinic.dto.patient.CreatePatientDto;
 import com.zimmerh0.medicalclinic.exception.PatientAlreadyExistsException;
 import com.zimmerh0.medicalclinic.exception.PatientNotFoundException;
 import com.zimmerh0.medicalclinic.patient.Patient;
