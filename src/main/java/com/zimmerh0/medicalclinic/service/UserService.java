@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.zimmerh0.medicalclinic.repository.DoctorRepository;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -48,14 +50,12 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public boolean deleteUserById(Long id) {
+    public void deleteUserById(Long id) {
         User user = getUserById(id);
 
-        if (patientRepository.existsByUser_Id(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "User is linked to a patient");
+        if (patientRepository.existsByUser_Id(id) || doctorRepository.existsByUserId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User has a patient or doctor profile");
         }
-
         userRepository.delete(user);
-        return true;
     }
 }
