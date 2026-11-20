@@ -1,10 +1,10 @@
 package com.zimmerh0.medicalclinic.controller;
 
-import com.zimmerh0.medicalclinic.dto.ChangePasswordCommand;
-import com.zimmerh0.medicalclinic.dto.CreatePatientDto;
-import com.zimmerh0.medicalclinic.dto.PatientDto;
-import com.zimmerh0.medicalclinic.dto.PatientMapper;
-import com.zimmerh0.medicalclinic.dto.UpdatePatientDto;
+import com.zimmerh0.medicalclinic.dto.patient.ChangePasswordCommand;
+import com.zimmerh0.medicalclinic.dto.patient.CreatePatientDto;
+import com.zimmerh0.medicalclinic.dto.patient.PatientDto;
+import com.zimmerh0.medicalclinic.dto.patient.PatientMapper;
+import com.zimmerh0.medicalclinic.dto.patient.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.service.ChangePasswordResult;
 import com.zimmerh0.medicalclinic.service.PatientService;
@@ -43,10 +43,12 @@ public class PatientController {
     }
 
     @PostMapping
-    public ResponseEntity<PatientDto> createPatient(@RequestBody CreatePatientDto createPatientDto) {
-        if (createPatientDto.email() == null || createPatientDto.email().isBlank()) {
+    public ResponseEntity<PatientDto> createPatient(
+            @RequestBody CreatePatientDto createPatientDto) {
+        if (createPatientDto.userId() == null || createPatientDto.userId() <= 0) {
             return ResponseEntity.badRequest().build();
         }
+
         Patient patient = patientService.addPatient(createPatientDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(patientMapper.toDto(patient));
     }
