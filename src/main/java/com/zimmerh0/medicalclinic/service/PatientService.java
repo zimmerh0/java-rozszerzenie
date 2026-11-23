@@ -45,10 +45,9 @@ public class PatientService {
         return patientRepository.save(Patient.from(dto, user));
     }
 
-    public boolean deletePatientByEmail(String email) {
+    public void deletePatientByEmail(String email) {
         Patient patient = getPatientByEmail(email);
         patientRepository.delete(patient);
-        return true;
     }
 
     public Patient updatePatientByEmail(String email, UpdatePatientDto dto) {

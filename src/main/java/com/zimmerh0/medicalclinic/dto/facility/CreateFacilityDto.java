@@ -1,10 +1,12 @@
 package com.zimmerh0.medicalclinic.dto.facility;
 
+import jakarta.validation.constraints.NotBlank;
+
 public record CreateFacilityDto(
-        String name,
-        String city,
-        String postalCode,
-        String street,
-        String buildingNumber
+        @NotBlank String name,
+        @NotBlank String city,
+        @NotBlank String postalCode,
+        @NotBlank String street,
+        @NotBlank String buildingNumber
 ) {
 }

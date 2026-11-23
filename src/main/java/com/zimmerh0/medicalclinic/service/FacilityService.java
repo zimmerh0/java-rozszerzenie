@@ -13,18 +13,23 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FacilityService {
+
     private final FacilityRepository facilityRepository;
 
-    public List<Facility> getAllFacilities(){
+    public List<Facility> getAllFacilities() {
         return facilityRepository.findAll();
     }
-    public Facility getFacilityById(Long id){
-        return facilityRepository.findById(id).orElseThrow(() -> new FacilityNotFoundException(id));
+
+    public Facility getFacilityById(Long id) {
+        return facilityRepository.findById(id)
+                .orElseThrow(() -> new FacilityNotFoundException(id));
     }
-    public Facility addFacility(CreateFacilityDto dto){
-        if (facilityRepository.existsByName(dto.name())){
+
+    public Facility addFacility(CreateFacilityDto dto) {
+        if (facilityRepository.existsByName(dto.name())) {
             throw new FacilityAlreadyExistsException(dto.name());
         }
+
         return facilityRepository.save(Facility.from(dto));
     }
 }

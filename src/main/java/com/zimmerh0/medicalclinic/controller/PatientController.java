@@ -8,6 +8,7 @@ import com.zimmerh0.medicalclinic.dto.patient.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.service.ChangePasswordResult;
 import com.zimmerh0.medicalclinic.service.PatientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -37,46 +39,37 @@ public class PatientController {
     }
 
     @GetMapping("/{email}")
-    public ResponseEntity<PatientDto> getPatient(@PathVariable String email) {
+    public PatientDto getPatient(@PathVariable String email) {
         Patient patient = patientService.getPatientByEmail(email);
-        return ResponseEntity.ok(patientMapper.toDto(patient));
+        return patientMapper.toDto(patient);
     }
 
     @PostMapping
-    public ResponseEntity<PatientDto> createPatient(
-            @RequestBody CreatePatientDto createPatientDto) {
-        if (createPatientDto.userId() == null || createPatientDto.userId() <= 0) {
-            return ResponseEntity.badRequest().build();
-        }
-
+    @ResponseStatus(HttpStatus.CREATED)
+    public PatientDto createPatient(
+            @Valid @RequestBody CreatePatientDto createPatientDto) {
         Patient patient = patientService.addPatient(createPatientDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(patientMapper.toDto(patient));
+        return patientMapper.toDto(patient);
     }
 
     @DeleteMapping("/{email}")
-    public ResponseEntity<Void> deletePatient(@PathVariable String email) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePatient(@PathVariable String email) {
         patientService.deletePatientByEmail(email);
-        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{email}")
-    public ResponseEntity<PatientDto> updatePatient(
+    public PatientDto updatePatient(
             @PathVariable String email,
-            @RequestBody UpdatePatientDto updatePatientDto) {
+            @Valid @RequestBody UpdatePatientDto updatePatientDto) {
         Patient updatedPatient = patientService.updatePatientByEmail(email, updatePatientDto);
-        return ResponseEntity.ok(patientMapper.toDto(updatedPatient));
+        return patientMapper.toDto(updatedPatient);
     }
 
     @PutMapping("/{email}/password")
     public ResponseEntity<Void> changePassword(
             @PathVariable String email,
-            @RequestBody ChangePasswordCommand command) {
-        if (command.currentPassword() == null
-                || command.newPassword() == null
-                || command.newPassword().isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-
+            @Valid @RequestBody ChangePasswordCommand command) {
         ChangePasswordResult result = patientService.changePassword(email, command);
         return switch (result) {
             case PATIENT_NOT_FOUND -> ResponseEntity.notFound().build();

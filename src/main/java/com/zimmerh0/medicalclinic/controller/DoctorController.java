@@ -5,9 +5,10 @@ import com.zimmerh0.medicalclinic.dto.doctor.CreateDoctorDto;
 import com.zimmerh0.medicalclinic.dto.doctor.DoctorDto;
 import com.zimmerh0.medicalclinic.dto.doctor.DoctorMapper;
 import com.zimmerh0.medicalclinic.service.DoctorService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,31 +29,24 @@ public class DoctorController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DoctorDto> getDoctor(@PathVariable Long id) {
+    public DoctorDto getDoctor(@PathVariable Long id) {
         Doctor doctor = doctorService.getDoctorById(id);
-        return ResponseEntity.ok(doctorMapper.toDto(doctor));
+        return doctorMapper.toDto(doctor);
     }
 
     @PostMapping
-    public ResponseEntity<DoctorDto> createDoctor(
-            @RequestBody CreateDoctorDto dto) {
-        if (dto.userId() == null || dto.userId() <= 0) {
-            return ResponseEntity.badRequest().build();
-        }
-
+    @ResponseStatus(HttpStatus.CREATED)
+    public DoctorDto createDoctor(
+            @Valid @RequestBody CreateDoctorDto dto) {
         Doctor doctor = doctorService.addDoctor(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(doctorMapper.toDto(doctor));
+        return doctorMapper.toDto(doctor);
     }
 
     @PutMapping("/{doctorId}/facilities/{facilityId}")
-    public ResponseEntity<Void> assignFacility(
-            @PathVariable Long doctorId,
-            @PathVariable Long facilityId) {
-        if (doctorId <= 0 || facilityId <= 0) {
-            return ResponseEntity.badRequest().build();
-        }
-
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void assignFacility(
+            @PathVariable @Positive Long doctorId,
+            @PathVariable @Positive Long facilityId) {
         doctorService.assignFacility(doctorId, facilityId);
-        return ResponseEntity.noContent().build();
     }
 }

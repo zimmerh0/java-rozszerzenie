@@ -3,6 +3,7 @@ package com.zimmerh0.medicalclinic.service;
 import com.zimmerh0.medicalclinic.dto.user.UserRequest;
 import com.zimmerh0.medicalclinic.exception.UserAlreadyExistsException;
 import com.zimmerh0.medicalclinic.exception.UserNotFoundException;
+import com.zimmerh0.medicalclinic.repository.DoctorRepository;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
 import com.zimmerh0.medicalclinic.repository.UserRepository;
 import com.zimmerh0.medicalclinic.user.User;
@@ -10,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import com.zimmerh0.medicalclinic.repository.DoctorRepository;
 
 import java.util.List;
 
@@ -27,13 +27,12 @@ public class UserService {
     }
 
     public User getUserById(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     public User addUser(UserRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new UserAlreadyExistsException(request.email());
-        }
+        validateEmailAvailable(request.email());
 
         User user = new User(request.email(), request.password());
         return userRepository.save(user);
@@ -42,8 +41,8 @@ public class UserService {
     public User updateUserById(Long id, UserRequest request) {
         User user = getUserById(id);
 
-        if (!user.getEmail().equals(request.email()) && userRepository.existsByEmail(request.email())) {
-            throw new UserAlreadyExistsException(request.email());
+        if (!user.getEmail().equals(request.email())) {
+            validateEmailAvailable(request.email());
         }
 
         user.update(request);
@@ -56,6 +55,13 @@ public class UserService {
         if (patientRepository.existsByUser_Id(id) || doctorRepository.existsByUserId(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User has a patient or doctor profile");
         }
+
         userRepository.delete(user);
+    }
+
+    private void validateEmailAvailable(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new UserAlreadyExistsException(email);
+        }
     }
 }

@@ -5,9 +5,9 @@ import com.zimmerh0.medicalclinic.dto.facility.FacilityDto;
 import com.zimmerh0.medicalclinic.dto.facility.FacilityMapper;
 import com.zimmerh0.medicalclinic.facility.Facility;
 import com.zimmerh0.medicalclinic.service.FacilityService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,18 +28,15 @@ public class FacilityController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<FacilityDto> getFacility(@PathVariable Long id) {
+    public FacilityDto getFacility(@PathVariable Long id) {
         Facility facility = facilityService.getFacilityById(id);
-        return ResponseEntity.ok(facilityMapper.toDto(facility));
+        return facilityMapper.toDto(facility);
     }
 
     @PostMapping
-    public ResponseEntity<FacilityDto> createFacility(@RequestBody CreateFacilityDto dto) {
-        if (dto.name() == null || dto.name().isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-
+    @ResponseStatus(HttpStatus.CREATED)
+    public FacilityDto createFacility(@Valid @RequestBody CreateFacilityDto dto) {
         Facility facility = facilityService.addFacility(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(facilityMapper.toDto(facility));
+        return facilityMapper.toDto(facility);
     }
 }
