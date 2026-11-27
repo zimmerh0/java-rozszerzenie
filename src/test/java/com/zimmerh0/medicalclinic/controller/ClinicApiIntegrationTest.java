@@ -162,6 +162,32 @@ class ClinicApiIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void createVisit_DifferentDoctorsAtSameTime_BothVisitsCreated() throws Exception {
+        //given
+        long firstDoctorId = createDoctor(createUser("first.doctor@mail.com"));
+        long secondDoctorId = createDoctor(createUser("second.doctor@mail.com"));
+        long facilityId = createFacility("Clinic");
+        mockMvc.perform(put("/api/doctors/{doctorId}/facilities/{facilityId}", firstDoctorId, facilityId))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(put("/api/doctors/{doctorId}/facilities/{facilityId}", secondDoctorId, facilityId))
+                .andExpect(status().isNoContent());
+        String startDate = "2099-01-01T10:00:00";
+        String endDate = "2099-01-01T10:45:00";
+
+        //when
+        long firstVisitId = create("/api/visits", visitBody(firstDoctorId, facilityId, startDate, endDate));
+        long secondVisitId = create("/api/visits", visitBody(secondDoctorId, facilityId, startDate, endDate));
+
+        //then
+        assertEquals(2, jdbcTemplate.queryForObject(
+                "select count(*) from visits where facility_id = ?", Integer.class, facilityId));
+        assertEquals(firstDoctorId, jdbcTemplate.queryForObject(
+                "select doctor_id from visits where id = ?", Long.class, firstVisitId));
+        assertEquals(secondDoctorId, jdbcTemplate.queryForObject(
+                "select doctor_id from visits where id = ?", Long.class, secondVisitId));
+    }
+
     private long createUser(String email) throws Exception {
         return create("/api/users", "{\"email\":\"" + email + "\",\"password\":\"123\"}");
     }

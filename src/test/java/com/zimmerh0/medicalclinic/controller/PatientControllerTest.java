@@ -11,6 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,18 +44,23 @@ public class PatientControllerTest {
     void getAllPatients_PatientsExists_ReturnsPatients() throws Exception{
         //given
         Patient patient = new Patient(new User("mail@mail.com", "123"), "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
-        when(service.getAllPatients()).thenReturn(List.of(patient));
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("id").ascending());
+        when(service.getAllPatients(pageable)).thenReturn(new PageImpl<>(List.of(patient), pageable, 1));
 
         mockMvc.perform(get("/api/patients"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].email").value("mail@mail.com"))
-                .andExpect(jsonPath("$[0].password").doesNotExist())
-                .andExpect(jsonPath("$[0].idCardNo").value("abc123"))
-                .andExpect(jsonPath("$[0].firstName").value("Ania"))
-                .andExpect(jsonPath("$[0].lastName").value("Kowalska"))
-                .andExpect(jsonPath("$[0].phoneNumber").value("123456789"))
-                .andExpect(jsonPath("$[0].birthday").value("2000-12-01"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].email").value("mail@mail.com"))
+                .andExpect(jsonPath("$.content[0].password").doesNotExist())
+                .andExpect(jsonPath("$.content[0].idCardNo").value("abc123"))
+                .andExpect(jsonPath("$.content[0].firstName").value("Ania"))
+                .andExpect(jsonPath("$.content[0].lastName").value("Kowalska"))
+                .andExpect(jsonPath("$.content[0].phoneNumber").value("123456789"))
+                .andExpect(jsonPath("$.content[0].birthday").value("2000-12-01"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
     }
 
     @Test

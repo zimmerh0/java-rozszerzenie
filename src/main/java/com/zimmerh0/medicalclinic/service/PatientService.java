@@ -11,10 +11,11 @@ import com.zimmerh0.medicalclinic.repository.PatientRepository;
 import com.zimmerh0.medicalclinic.repository.UserRepository;
 import com.zimmerh0.medicalclinic.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,8 +25,8 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
 
-    public List<Patient> getAllPatients() {
-        return patientRepository.findAll();
+    public Page<Patient> getAllPatients(Pageable pageable) {
+        return patientRepository.findAll(pageable);
     }
 
     public Patient getPatientByEmail(String email) {
@@ -45,11 +46,13 @@ public class PatientService {
         return patientRepository.save(Patient.from(dto, user));
     }
 
+    @Transactional
     public void deletePatientByEmail(String email) {
         Patient patient = getPatientByEmail(email);
         patientRepository.delete(patient);
     }
 
+    @Transactional
     public Patient updatePatientByEmail(String email, UpdatePatientDto dto) {
         Patient patient = getPatientByEmail(email);
         patient.update(dto);

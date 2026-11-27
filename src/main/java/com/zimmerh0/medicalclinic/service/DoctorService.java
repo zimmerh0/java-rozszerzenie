@@ -10,10 +10,10 @@ import com.zimmerh0.medicalclinic.repository.DoctorRepository;
 import com.zimmerh0.medicalclinic.repository.UserRepository;
 import com.zimmerh0.medicalclinic.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +23,8 @@ public class DoctorService {
     private final UserRepository userRepository;
     private final FacilityService facilityService;
 
-    public List<Doctor> getAllDoctors() {
-        return doctorRepository.findAll();
+    public Page<Doctor> getAllDoctors(Pageable pageable) {
+        return doctorRepository.findAll(pageable);
     }
 
     public Doctor getDoctorById(Long id) {
@@ -32,6 +32,7 @@ public class DoctorService {
                 .orElseThrow(() -> new DoctorNotFoundException(id));
     }
 
+    @Transactional
     public Doctor addDoctor(CreateDoctorDto dto) {
         User user = userRepository.findById(dto.userId())
                 .orElseThrow(() -> new UserNotFoundException(dto.userId()));

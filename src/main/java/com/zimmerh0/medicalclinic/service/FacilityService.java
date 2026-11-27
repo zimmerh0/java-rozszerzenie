@@ -6,9 +6,10 @@ import com.zimmerh0.medicalclinic.exception.FacilityNotFoundException;
 import com.zimmerh0.medicalclinic.facility.Facility;
 import com.zimmerh0.medicalclinic.repository.FacilityRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,8 +17,8 @@ public class FacilityService {
 
     private final FacilityRepository facilityRepository;
 
-    public List<Facility> getAllFacilities() {
-        return facilityRepository.findAll();
+    public Page<Facility> getAllFacilities(Pageable pageable) {
+        return facilityRepository.findAll(pageable);
     }
 
     public Facility getFacilityById(Long id) {
@@ -25,6 +26,7 @@ public class FacilityService {
                 .orElseThrow(() -> new FacilityNotFoundException(id));
     }
 
+    @Transactional
     public Facility addFacility(CreateFacilityDto dto) {
         if (facilityRepository.existsByName(dto.name())) {
             throw new FacilityAlreadyExistsException(dto.name());

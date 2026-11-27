@@ -6,6 +6,7 @@ import com.zimmerh0.medicalclinic.dto.visit.VisitDto;
 import com.zimmerh0.medicalclinic.dto.visit.VisitMapper;
 import com.zimmerh0.medicalclinic.service.VisitService;
 import com.zimmerh0.medicalclinic.visit.Visit;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Wizyty", description = "Udostepnianie terminow i rezerwacja wizyt")
 @RestController
 @RequestMapping("/api/visits")
 @RequiredArgsConstructor

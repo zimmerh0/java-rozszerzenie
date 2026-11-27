@@ -9,10 +9,11 @@ import com.zimmerh0.medicalclinic.repository.UserRepository;
 import com.zimmerh0.medicalclinic.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +23,8 @@ public class UserService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public Page<User> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     public User getUserById(Long id) {
@@ -31,6 +32,7 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
+    @Transactional
     public User addUser(UserRequest request) {
         validateEmailAvailable(request.email());
 
@@ -38,6 +40,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public User updateUserById(Long id, UserRequest request) {
         User user = getUserById(id);
 
@@ -49,6 +52,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUserById(Long id) {
         User user = getUserById(id);
 

@@ -1,14 +1,21 @@
 package com.zimmerh0.medicalclinic.service;
 
+import com.zimmerh0.medicalclinic.dto.patient.ChangePasswordCommand;
 import com.zimmerh0.medicalclinic.dto.patient.CreatePatientDto;
+import com.zimmerh0.medicalclinic.dto.patient.UpdatePatientDto;
 import com.zimmerh0.medicalclinic.exception.PatientAlreadyExistsException;
 import com.zimmerh0.medicalclinic.exception.PatientNotFoundException;
+import com.zimmerh0.medicalclinic.exception.UserNotFoundException;
 import com.zimmerh0.medicalclinic.patient.Patient;
 import com.zimmerh0.medicalclinic.repository.PatientRepository;
 import com.zimmerh0.medicalclinic.repository.UserRepository;
 import com.zimmerh0.medicalclinic.user.User;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.Assertions;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -21,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class PatientServiceTest {
@@ -41,16 +49,17 @@ public class PatientServiceTest {
         //given
         Patient patient1 = new Patient(new User("mail1@mail.com", "123"), "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
         Patient patient2 = new Patient(new User("mail2@mail.com", "543"), "hnj534", "Jan", "Nowak", "987654321", LocalDate.of(2005, 10, 12));
-        when(patientRepository.findAll()).thenReturn(List.of(patient1, patient2));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(patientRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(patient1, patient2), pageable, 2));
 
         //when
-        List<Patient> result = patientService.getAllPatients();
+        Page<Patient> result = patientService.getAllPatients(pageable);
 
         //then
         Assertions.assertAll(
-                () -> assertEquals(2, result.size()),
-                () -> assertEquals("mail1@mail.com", result.get(0).getUser().getEmail()),
-                () -> assertEquals("mail2@mail.com", result.get(1).getUser().getEmail())
+                () -> assertEquals(2, result.getContent().size()),
+                () -> assertEquals("mail1@mail.com", result.getContent().get(0).getUser().getEmail()),
+                () -> assertEquals("mail2@mail.com", result.getContent().get(1).getUser().getEmail())
         );
     }
 
@@ -125,6 +134,105 @@ public class PatientServiceTest {
         PatientNotFoundException exception = assertThrows(PatientNotFoundException.class, () -> patientService.getPatientByEmail(email));
         //then
         assertEquals("Patient not found: " + email, exception.getMessage());
+    }
+
+    @Test
+    void addPatient_UserMissing_ThrowsException() {
+        //given
+        CreatePatientDto dto = new CreatePatientDto(1L, "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
+        when(userRepository.findById(dto.userId())).thenReturn(Optional.empty());
+
+        //when
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
+                () -> patientService.addPatient(dto));
+
+        //then
+        assertEquals("User not found: " + dto.userId(), exception.getMessage());
+        verifyNoInteractions(patientRepository);
+    }
+
+    @Test
+    void updatePatientByEmail_PatientMissing_ThrowsException() {
+        //given
+        String email = "missing@mail.com";
+        UpdatePatientDto dto = new UpdatePatientDto("Anna", "Nowak", "987654321", LocalDate.of(2001, 1, 2));
+        when(patientRepository.findByUser_Email(email)).thenReturn(Optional.empty());
+
+        //when
+        PatientNotFoundException exception = assertThrows(PatientNotFoundException.class,
+                () -> patientService.updatePatientByEmail(email, dto));
+
+        //then
+        assertEquals("Patient not found: " + email, exception.getMessage());
+        verify(patientRepository, never()).save(any(Patient.class));
+    }
+
+    @Test
+    void deletePatientByEmail_PatientMissing_ThrowsException() {
+        //given
+        String email = "missing@mail.com";
+        when(patientRepository.findByUser_Email(email)).thenReturn(Optional.empty());
+
+        //when
+        PatientNotFoundException exception = assertThrows(PatientNotFoundException.class,
+                () -> patientService.deletePatientByEmail(email));
+
+        //then
+        assertEquals("Patient not found: " + email, exception.getMessage());
+        verify(patientRepository, never()).delete(any(Patient.class));
+    }
+
+    @Test
+    void changePassword_CorrectPassword_PasswordChanged() {
+        //given
+        User user = user();
+        Patient patient = new Patient(user, "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
+        ChangePasswordCommand command = new ChangePasswordCommand("123", "newPassword");
+        when(patientRepository.findByUser_Email(user.getEmail())).thenReturn(Optional.of(patient));
+
+        //when
+        ChangePasswordResult result = patientService.changePassword(user.getEmail(), command);
+
+        //then
+        assertAll(
+                () -> assertEquals(ChangePasswordResult.CHANGED, result),
+                () -> assertEquals("newPassword", user.getPassword())
+        );
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void changePassword_WrongPassword_PasswordUnchanged() {
+        //given
+        User user = user();
+        Patient patient = new Patient(user, "abc123", "Ania", "Kowalska", "123456789", LocalDate.of(2000, 12, 1));
+        ChangePasswordCommand command = new ChangePasswordCommand("wrongPassword", "newPassword");
+        when(patientRepository.findByUser_Email(user.getEmail())).thenReturn(Optional.of(patient));
+
+        //when
+        ChangePasswordResult result = patientService.changePassword(user.getEmail(), command);
+
+        //then
+        assertAll(
+                () -> assertEquals(ChangePasswordResult.WRONG_PASSWORD, result),
+                () -> assertEquals("123", user.getPassword())
+        );
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void changePassword_PatientMissing_ReturnsPatientNotFound() {
+        //given
+        String email = "missing@mail.com";
+        ChangePasswordCommand command = new ChangePasswordCommand("123", "newPassword");
+        when(patientRepository.findByUser_Email(email)).thenReturn(Optional.empty());
+
+        //when
+        ChangePasswordResult result = patientService.changePassword(email, command);
+
+        //then
+        assertEquals(ChangePasswordResult.PATIENT_NOT_FOUND, result);
+        verifyNoInteractions(userRepository);
     }
 
     private User user() {
