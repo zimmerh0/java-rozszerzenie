@@ -1,10 +1,12 @@
-package com.zimmerh0.medicalclinic.dto;
+package com.zimmerh0.medicalclinic.dto.patient;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDate;
 
 public record CreatePatientDto(
-        String email,
-        String password,
+        @NotNull @Positive Long userId,
         String idCardNo,
         String firstName,
         String lastName,
